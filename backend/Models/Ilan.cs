@@ -8,7 +8,7 @@ public class Ilan
     public string Meslek { get; set; } = string.Empty;
     public string Konum { get; set; } = string.Empty;
     public DateTime SonBasvuruTarihi { get; set; }
-    public DateTime OlusturmaTarihi { get; set; } = DateTime.Now;
+   public DateTime OlusturmaTarihi { get; set; } = DateTime.UtcNow;
 
     public int IsverenId { get; set; }
     public Kullanici? Isveren { get; set; }

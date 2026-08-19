@@ -7,7 +7,7 @@ public class Kullanici
     public string Email { get; set; } = string.Empty;
     public string SifreHash { get; set; } = string.Empty; // şifreyi asla düz metin saklamayacağız, ileride "hash"leyeceğiz
     public KullaniciRolu Rol { get; set; }
-    public DateTime OlusturmaTarihi { get; set; } = DateTime.Now;
+  public DateTime OlusturmaTarihi { get; set; } = DateTime.UtcNow;
 }
 
 public enum KullaniciRolu

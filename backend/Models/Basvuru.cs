@@ -19,6 +19,6 @@ public class Basvuru
     public int TecrubeYili { get; set; }
     public string CvDosyaYolu { get; set; } = string.Empty;
 
-    public DateTime BasvuruTarihi { get; set; } = DateTime.Now;
+   public DateTime BasvuruTarihi { get; set; } = DateTime.UtcNow;
     public string Durum { get; set; } = "Beklemede"; // Beklemede, İncelendi, Reddedildi, Kabul edildi
 }
