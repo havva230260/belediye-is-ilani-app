@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/ilan_listesi_screen.dart';
+import 'screens/giris_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const IlanListesiScreen(),
+      home: const GirisScreen(),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/ilan.dart';
 import '../services/api_service.dart';
+import 'ilan_detay_screen.dart';
 
 class IlanListesiScreen extends StatefulWidget {
   const IlanListesiScreen({super.key});
@@ -45,6 +46,15 @@ class _IlanListesiScreenState extends State<IlanListesiScreen> {
                 child: ListTile(
                   title: Text(ilan.baslik),
                   subtitle: Text('${ilan.meslek} • ${ilan.konum}'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => IlanDetayScreen(ilan: ilan),
+                      ),
+                    );
+                  },
                 ),
               );
             },
