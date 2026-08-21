@@ -5,6 +5,8 @@ class Ilan {
   final String meslek;
   final String konum;
   final DateTime sonBasvuruTarihi;
+  final int isverenId;
+  final DateTime olusturmaTarihi;
 
   Ilan({
     required this.id,
@@ -13,6 +15,8 @@ class Ilan {
     required this.meslek,
     required this.konum,
     required this.sonBasvuruTarihi,
+    required this.isverenId,
+    required this.olusturmaTarihi,
   });
 
   factory Ilan.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,10 @@ class Ilan {
       meslek: json['meslek'],
       konum: json['konum'],
       sonBasvuruTarihi: DateTime.parse(json['sonBasvuruTarihi']),
+      isverenId: json['isverenId'] ?? 0,
+      olusturmaTarihi: json['olusturmaTarihi'] != null
+          ? DateTime.parse(json['olusturmaTarihi'])
+          : DateTime.now(),
     );
   }
 }

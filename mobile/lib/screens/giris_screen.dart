@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import 'ilan_listesi_screen.dart';
+import 'isveren_ilanlarim_screen.dart';
 import 'kayit_screen.dart';
 
 class GirisScreen extends StatefulWidget {
@@ -37,8 +39,20 @@ class _GirisScreenState extends State<GirisScreen> {
       setState(() {
         _hataMesaji = hata;
       });
+      return;
+    }
+
+    if (!mounted) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final rol = prefs.getString('rol');
+
+    if (rol == 'Isveren') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const IsverenIlanlarimScreen()),
+      );
     } else {
-      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const IlanListesiScreen()),

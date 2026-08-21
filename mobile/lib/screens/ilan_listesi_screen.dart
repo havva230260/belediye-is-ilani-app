@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/ilan.dart';
 import '../services/api_service.dart';
 import 'ilan_detay_screen.dart';
+import 'basvurularim_screen.dart';
 
 class IlanListesiScreen extends StatefulWidget {
   const IlanListesiScreen({super.key});
@@ -23,7 +24,21 @@ class _IlanListesiScreenState extends State<IlanListesiScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('İş İlanları')),
+      appBar: AppBar(
+        title: const Text('İş İlanları'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.assignment_outlined),
+            tooltip: 'Başvurularım',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BasvurularimScreen()),
+              );
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<List<Ilan>>(
         future: _ilanlar,
         builder: (context, snapshot) {

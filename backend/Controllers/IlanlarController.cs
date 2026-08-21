@@ -23,6 +23,16 @@ public class IlanlarController : ControllerBase
         return await _context.Ilanlar.ToListAsync();
     }
 
+    // GET: api/ilanlar/isveren/5
+    [HttpGet("isveren/{isverenId}")]
+    public async Task<ActionResult<IEnumerable<Ilan>>> GetIlanlarByIsveren(int isverenId)
+    {
+        return await _context.Ilanlar
+            .Where(i => i.IsverenId == isverenId)
+            .OrderByDescending(i => i.OlusturmaTarihi)
+            .ToListAsync();
+    }
+
     // GET: api/ilanlar/5
     [HttpGet("{id}")]
     public async Task<ActionResult<Ilan>> GetIlan(int id)

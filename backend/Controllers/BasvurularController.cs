@@ -21,6 +21,62 @@ public class BasvurularController : ControllerBase
     public async Task<ActionResult<IEnumerable<Basvuru>>> GetBasvurularByIlan(int ilanId) =>
         await _context.Basvurular.Where(b => b.IlanId == ilanId).ToListAsync();
 
+    // GET: api/Basvurular/ilan/5/detayli
+    [HttpGet("ilan/{ilanId}/detayli")]
+    public async Task<ActionResult<IEnumerable<BasvuruIsverenDto>>> GetBasvurularByIlanDetayli(int ilanId)
+    {
+        var basvurular = await _context.Basvurular
+            .Where(b => b.IlanId == ilanId)
+            .Join(_context.Kullanicilar,
+                b => b.IsArayanId,
+                k => k.Id,
+                (b, k) => new BasvuruIsverenDto
+                {
+                    Id = b.Id,
+                    IlanId = b.IlanId,
+                    IsArayanId = b.IsArayanId,
+                    BasvuranAdSoyad = k.AdSoyad,
+                    BasvuranEmail = k.Email,
+                    DogumTarihi = b.DogumTarihi,
+                    Telefon = b.Telefon,
+                    EgitimDurumu = b.EgitimDurumu,
+                    Universite = b.Universite,
+                    Bolum = b.Bolum,
+                    MeslekUzmanlik = b.MeslekUzmanlik,
+                    TecrubeYili = b.TecrubeYili,
+                    CvDosyaYolu = b.CvDosyaYolu,
+                    BasvuruTarihi = b.BasvuruTarihi,
+                    Durum = b.Durum
+                })
+            .OrderByDescending(x => x.BasvuruTarihi)
+            .ToListAsync();
+        return basvurular;
+    }
+
+    // GET: api/Basvurular/basvuran/5
+    [HttpGet("basvuran/{isArayanId}")]
+    public async Task<ActionResult<IEnumerable<BasvurumDto>>> GetBasvurularimByBasvuran(int isArayanId)
+    {
+        var basvurular = await _context.Basvurular
+            .Where(b => b.IsArayanId == isArayanId)
+            .Join(_context.Ilanlar,
+                b => b.IlanId,
+                i => i.Id,
+                (b, i) => new BasvurumDto
+                {
+                    Id = b.Id,
+                    IlanId = b.IlanId,
+                    IlanBaslik = i.Baslik,
+                    IlanMeslek = i.Meslek,
+                    IlanKonum = i.Konum,
+                    BasvuruTarihi = b.BasvuruTarihi,
+                    Durum = b.Durum
+                })
+            .OrderByDescending(x => x.BasvuruTarihi)
+            .ToListAsync();
+        return basvurular;
+    }
+
     [HttpGet("kontrol")]
     public async Task<ActionResult<bool>> BasvuruKontrol([FromQuery] int ilanId, [FromQuery] int isArayanId)
     {

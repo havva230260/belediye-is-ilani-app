@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import '../models/basvuru_isveren.dart';
+import '../models/basvurum.dart';
 
 class BasvuruService {
   static const String baseUrl = 'http://10.0.2.2:5073/api';
@@ -16,6 +18,42 @@ class BasvuruService {
       return jsonDecode(response.body) == true;
     }
     return false;
+  }
+
+  Future<List<BasvuruIsveren>> basvurulariGetir(int ilanId) async {
+    final uri = Uri.parse('$baseUrl/Basvurular/ilan/$ilanId/detayli');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final List<dynamic> veri = jsonDecode(utf8.decode(response.bodyBytes));
+      return veri.map((json) => BasvuruIsveren.fromJson(json)).toList();
+    } else {
+      throw Exception('Başvurular yüklenemedi (kod: ${response.statusCode})');
+    }
+  }
+
+  Future<List<Basvurum>> basvurularimiGetir(int isArayanId) async {
+    final uri = Uri.parse('$baseUrl/Basvurular/basvuran/$isArayanId');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final List<dynamic> veri = jsonDecode(utf8.decode(response.bodyBytes));
+      return veri.map((json) => Basvurum.fromJson(json)).toList();
+    } else {
+      throw Exception('Başvurularınız yüklenemedi (kod: ${response.statusCode})');
+    }
+  }
+
+  Future<String?> durumGuncelle(int basvuruId, String yeniDurum) async {
+    final uri = Uri.parse('$baseUrl/Basvurular/$basvuruId/durum');
+    final response = await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(yeniDurum),
+    );
+    if (response.statusCode == 204) {
+      return null;
+    } else {
+      return 'Durum güncellenemedi (kod: ${response.statusCode})';
+    }
   }
 
   Future<String?> basvuruGonder({
