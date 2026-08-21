@@ -14,6 +14,8 @@ class BasvuruIsveren {
   final String cvDosyaYolu;
   final DateTime basvuruTarihi;
   String durum;
+  final int? uygunlukPuani;
+  final String? yapayZekaOzeti;
 
   BasvuruIsveren({
     required this.id,
@@ -31,6 +33,8 @@ class BasvuruIsveren {
     required this.cvDosyaYolu,
     required this.basvuruTarihi,
     required this.durum,
+    this.uygunlukPuani,
+    this.yapayZekaOzeti,
   });
 
   factory BasvuruIsveren.fromJson(Map<String, dynamic> json) {
@@ -50,6 +54,8 @@ class BasvuruIsveren {
       cvDosyaYolu: json['cvDosyaYolu'],
       basvuruTarihi: DateTime.parse(json['basvuruTarihi']),
       durum: json['durum'],
+      uygunlukPuani: json['uygunlukPuani'],
+      yapayZekaOzeti: json['yapayZekaOzeti'],
     );
   }
 }

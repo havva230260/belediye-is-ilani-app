@@ -18,6 +18,11 @@ public class Basvuru
     public string MeslekUzmanlik { get; set; } = string.Empty;
     public int TecrubeYili { get; set; }
     public string CvDosyaYolu { get; set; } = string.Empty;
+    public string CvMetni { get; set; } = string.Empty;
+    public bool KvkkOnayi { get; set; }
+
+    public int? UygunlukPuani { get; set; }
+    public string? YapayZekaOzeti { get; set; }
 
    public DateTime BasvuruTarihi { get; set; } = DateTime.UtcNow;
     public string Durum { get; set; } = "Beklemede"; // Beklemede, İncelendi, Reddedildi, Kabul edildi

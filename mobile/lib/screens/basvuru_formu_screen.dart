@@ -24,6 +24,7 @@ class _BasvuruFormuScreenState extends State<BasvuruFormuScreen> {
   String? _egitimDurumu;
   int _tecrubeYili = 0;
   File? _cvDosyasi;
+  bool _kvkkOnayi = false;
   bool _gonderiliyor = false;
 
   final List<String> _egitimSecenekleri = [
@@ -35,6 +36,15 @@ class _BasvuruFormuScreenState extends State<BasvuruFormuScreen> {
     'Yüksek Lisans',
     'Doktora',
   ];
+
+  final List<String> _universiteGerektirenSecenekler = [
+    'Ön Lisans',
+    'Lisans',
+    'Yüksek Lisans',
+    'Doktora',
+  ];
+
+  bool get _universiteGerekli => _universiteGerektirenSecenekler.contains(_egitimDurumu);
 
   Future<void> _dogumTarihiSec() async {
     final secilen = await showDatePicker(
@@ -82,6 +92,12 @@ class _BasvuruFormuScreenState extends State<BasvuruFormuScreen> {
       );
       return;
     }
+    if (!_kvkkOnayi) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Devam etmek için KVKK onay kutusunu işaretlemeniz gerekiyor.')),
+      );
+      return;
+    }
 
     final prefs = await SharedPreferences.getInstance();
     final isArayanId = prefs.getInt('kullaniciId');
@@ -102,10 +118,11 @@ class _BasvuruFormuScreenState extends State<BasvuruFormuScreen> {
       dogumTarihi: _dogumTarihi!,
       telefon: _telefonController.text,
       egitimDurumu: _egitimDurumu!,
-      universite: _universiteController.text,
-      bolum: _bolumController.text,
+      universite: _universiteGerekli ? _universiteController.text : '',
+      bolum: _universiteGerekli ? _bolumController.text : '',
       meslekUzmanlik: _meslekController.text,
       tecrubeYili: _tecrubeYili,
+      kvkkOnayi: _kvkkOnayi,
       cvDosyasi: _cvDosyasi!,
     );
 
@@ -183,19 +200,25 @@ class _BasvuruFormuScreenState extends State<BasvuruFormuScreen> {
                 onChanged: (deger) {
                   setState(() {
                     _egitimDurumu = deger;
+                    if (!_universiteGerekli) {
+                      _universiteController.clear();
+                      _bolumController.clear();
+                    }
                   });
                 },
               ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _universiteController,
-                decoration: const InputDecoration(labelText: 'Üniversite'),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _bolumController,
-                decoration: const InputDecoration(labelText: 'Bölüm'),
-              ),
+              if (_universiteGerekli) ...[
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _universiteController,
+                  decoration: const InputDecoration(labelText: 'Üniversite'),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _bolumController,
+                  decoration: const InputDecoration(labelText: 'Bölüm'),
+                ),
+              ],
               const SizedBox(height: 8),
               TextFormField(
                 controller: _meslekController,
@@ -225,7 +248,22 @@ class _BasvuruFormuScreenState extends State<BasvuruFormuScreen> {
                     ? 'CV Seç (PDF)'
                     : 'Seçilen: ${_cvDosyasi!.path.split('/').last}'),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                value: _kvkkOnayi,
+                onChanged: (deger) {
+                  setState(() {
+                    _kvkkOnayi = deger ?? false;
+                  });
+                },
+                title: const Text(
+                  'CV\'mdeki bilgilerin, bu ilana uygunluğumu değerlendirmek amacıyla yapay zeka ile analiz edilmesini kabul ediyorum.',
+                  style: TextStyle(fontSize: 13),
+                ),
+              ),
+              const SizedBox(height: 8),
               _gonderiliyor
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(

@@ -66,6 +66,7 @@ class BasvuruService {
     required String bolum,
     required String meslekUzmanlik,
     required int tecrubeYili,
+    required bool kvkkOnayi,
     required File cvDosyasi,
   }) async {
     final uri = Uri.parse('$baseUrl/Basvurular');
@@ -79,6 +80,7 @@ class BasvuruService {
     request.fields['Bolum'] = bolum;
     request.fields['MeslekUzmanlik'] = meslekUzmanlik;
     request.fields['TecrubeYili'] = tecrubeYili.toString();
+    request.fields['KvkkOnayi'] = kvkkOnayi.toString();
     request.files.add(await http.MultipartFile.fromPath(
       'CvDosyasi',
       cvDosyasi.path,

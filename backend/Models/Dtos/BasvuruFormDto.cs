@@ -11,5 +11,6 @@ public class BasvuruFormDto
     public string Bolum { get; set; } = string.Empty;
     public string MeslekUzmanlik { get; set; } = string.Empty;
     public int TecrubeYili { get; set; }
+    public bool KvkkOnayi { get; set; }
     public IFormFile? CvDosyasi { get; set; }
 }

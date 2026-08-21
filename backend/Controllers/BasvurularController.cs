@@ -1,8 +1,11 @@
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Backend.Data;
 using Backend.Models;
 using Backend.Models.Dtos;
+using Backend.Services;
+using UglyToad.PdfPig;
 
 namespace Backend.Controllers;
 
@@ -11,7 +14,13 @@ namespace Backend.Controllers;
 public class BasvurularController : ControllerBase
 {
     private readonly AppDbContext _context;
-    public BasvurularController(AppDbContext context) { _context = context; }
+    private readonly GeminiService _geminiService;
+
+    public BasvurularController(AppDbContext context, GeminiService geminiService)
+    {
+        _context = context;
+        _geminiService = geminiService;
+    }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Basvuru>>> GetBasvurular() =>
@@ -25,32 +34,55 @@ public class BasvurularController : ControllerBase
     [HttpGet("ilan/{ilanId}/detayli")]
     public async Task<ActionResult<IEnumerable<BasvuruIsverenDto>>> GetBasvurularByIlanDetayli(int ilanId)
     {
+        var ilan = await _context.Ilanlar.FindAsync(ilanId);
+        if (ilan == null) return NotFound();
+
         var basvurular = await _context.Basvurular
             .Where(b => b.IlanId == ilanId)
-            .Join(_context.Kullanicilar,
-                b => b.IsArayanId,
-                k => k.Id,
-                (b, k) => new BasvuruIsverenDto
-                {
-                    Id = b.Id,
-                    IlanId = b.IlanId,
-                    IsArayanId = b.IsArayanId,
-                    BasvuranAdSoyad = k.AdSoyad,
-                    BasvuranEmail = k.Email,
-                    DogumTarihi = b.DogumTarihi,
-                    Telefon = b.Telefon,
-                    EgitimDurumu = b.EgitimDurumu,
-                    Universite = b.Universite,
-                    Bolum = b.Bolum,
-                    MeslekUzmanlik = b.MeslekUzmanlik,
-                    TecrubeYili = b.TecrubeYili,
-                    CvDosyaYolu = b.CvDosyaYolu,
-                    BasvuruTarihi = b.BasvuruTarihi,
-                    Durum = b.Durum
-                })
-            .OrderByDescending(x => x.BasvuruTarihi)
             .ToListAsync();
-        return basvurular;
+
+        foreach (var basvuru in basvurular)
+        {
+            if (basvuru.UygunlukPuani == null)
+            {
+                var (puan, ozet) = await _geminiService.CvUygunlugunuDegerlendir(
+                    basvuru.CvMetni, ilan.Baslik, ilan.Aciklama, ilan.Meslek);
+                basvuru.UygunlukPuani = puan;
+                basvuru.YapayZekaOzeti = ozet;
+            }
+        }
+        await _context.SaveChangesAsync();
+
+        var kullaniciIdleri = basvurular.Select(b => b.IsArayanId).Distinct().ToList();
+        var kullanicilar = await _context.Kullanicilar
+            .Where(k => kullaniciIdleri.Contains(k.Id))
+            .ToDictionaryAsync(k => k.Id);
+
+        var sonuc = basvurular
+            .OrderByDescending(b => b.UygunlukPuani ?? -1)
+            .Select(b => new BasvuruIsverenDto
+            {
+                Id = b.Id,
+                IlanId = b.IlanId,
+                IsArayanId = b.IsArayanId,
+                BasvuranAdSoyad = kullanicilar.TryGetValue(b.IsArayanId, out var kAd) ? kAd.AdSoyad : "Bilinmiyor",
+                BasvuranEmail = kullanicilar.TryGetValue(b.IsArayanId, out var kEmail) ? kEmail.Email : string.Empty,
+                DogumTarihi = b.DogumTarihi,
+                Telefon = b.Telefon,
+                EgitimDurumu = b.EgitimDurumu,
+                Universite = b.Universite,
+                Bolum = b.Bolum,
+                MeslekUzmanlik = b.MeslekUzmanlik,
+                TecrubeYili = b.TecrubeYili,
+                CvDosyaYolu = b.CvDosyaYolu,
+                BasvuruTarihi = b.BasvuruTarihi,
+                Durum = b.Durum,
+                UygunlukPuani = b.UygunlukPuani,
+                YapayZekaOzeti = b.YapayZekaOzeti
+            })
+            .ToList();
+
+        return sonuc;
     }
 
     // GET: api/Basvurular/basvuran/5
@@ -102,7 +134,12 @@ public class BasvurularController : ControllerBase
         if (zatenBasvurmus)
             return Conflict("Bu ilana zaten başvurdunuz.");
 
+        if (!dto.KvkkOnayi)
+            return BadRequest("CV'nizin yapay zeka ile analiz edilmesine onay vermeniz gerekiyor.");
+
         string cvDosyaYolu = string.Empty;
+        string cvMetni = string.Empty;
+
         if (dto.CvDosyasi != null && dto.CvDosyasi.Length > 0)
         {
             if (dto.CvDosyasi.ContentType != "application/pdf")
@@ -119,6 +156,21 @@ public class BasvurularController : ControllerBase
                 await dto.CvDosyasi.CopyToAsync(stream);
             }
             cvDosyaYolu = $"/uploads/cv/{dosyaAdi}";
+
+            try
+            {
+                using var pdf = PdfDocument.Open(tamYol);
+                var sb = new StringBuilder();
+                foreach (var sayfa in pdf.GetPages())
+                {
+                    sb.AppendLine(sayfa.Text);
+                }
+                cvMetni = sb.ToString();
+            }
+            catch
+            {
+                cvMetni = string.Empty;
+            }
         }
         else
         {
@@ -130,7 +182,7 @@ public class BasvurularController : ControllerBase
             IlanId = dto.IlanId, IsArayanId = dto.IsArayanId, DogumTarihi = dto.DogumTarihi,
             Telefon = dto.Telefon, EgitimDurumu = dto.EgitimDurumu, Universite = dto.Universite,
             Bolum = dto.Bolum, MeslekUzmanlik = dto.MeslekUzmanlik, TecrubeYili = dto.TecrubeYili,
-            CvDosyaYolu = cvDosyaYolu
+            CvDosyaYolu = cvDosyaYolu, CvMetni = cvMetni, KvkkOnayi = dto.KvkkOnayi
         };
         _context.Basvurular.Add(basvuru);
         await _context.SaveChangesAsync();

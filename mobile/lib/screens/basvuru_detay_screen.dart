@@ -22,6 +22,13 @@ class _BasvuruDetayScreenState extends State<BasvuruDetayScreen> {
     _durum = widget.basvuru.durum;
   }
 
+  Color _puanRengi(int? puan) {
+    if (puan == null) return Colors.grey;
+    if (puan >= 70) return Colors.green;
+    if (puan >= 40) return Colors.orange;
+    return Colors.red;
+  }
+
   Future<void> _cvyiAc() async {
     final url = Uri.parse('http://10.0.2.2:5073${widget.basvuru.cvDosyaYolu}');
     final acildi = await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -64,6 +71,38 @@ class _BasvuruDetayScreenState extends State<BasvuruDetayScreen> {
         child: ListView(
           children: [
             Text('Durum: $_durum', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 16),
+            if (b.uygunlukPuani != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _puanRengi(b.uygunlukPuani).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _puanRengi(b.uygunlukPuani)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.auto_awesome, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Yapay Zeka Uygunluk Puanı: ${b.uygunlukPuani}/100',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(b.yapayZekaOzeti ?? ''),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Bu sadece bir öneridir, son karar size aittir.',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+                    ),
+                  ],
+                ),
+              ),
             const Divider(height: 32),
             _bilgiSatiri('E-posta', b.basvuranEmail),
             _bilgiSatiri('Telefon', b.telefon),

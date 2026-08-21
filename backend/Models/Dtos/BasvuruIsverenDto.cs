@@ -17,4 +17,6 @@ public class BasvuruIsverenDto
     public string CvDosyaYolu { get; set; } = string.Empty;
     public DateTime BasvuruTarihi { get; set; }
     public string Durum { get; set; } = string.Empty;
+    public int? UygunlukPuani { get; set; }
+    public string? YapayZekaOzeti { get; set; }
 }

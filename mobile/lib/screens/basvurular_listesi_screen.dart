@@ -39,6 +39,13 @@ class _BasvurularListesiScreenState extends State<BasvurularListesiScreen> {
     }
   }
 
+  Color _puanRengi(int? puan) {
+    if (puan == null) return Colors.grey;
+    if (puan >= 70) return Colors.green;
+    if (puan >= 40) return Colors.orange;
+    return Colors.red;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,7 +54,20 @@ class _BasvurularListesiScreenState extends State<BasvurularListesiScreen> {
         future: _basvurularFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text(
+                    'Adaylar yapay zeka ile değerlendiriliyor, bu biraz sürebilir...',
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
           }
           if (snapshot.hasError) {
             return Center(child: Text('Hata: ${snapshot.error}'));
@@ -58,33 +78,55 @@ class _BasvurularListesiScreenState extends State<BasvurularListesiScreen> {
           }
           return RefreshIndicator(
             onRefresh: () async => _listeyiYenile(),
-            child: ListView.builder(
-              itemCount: basvurular.length,
-              itemBuilder: (context, index) {
-                final basvuru = basvurular[index];
-                return ListTile(
-                  title: Text(basvuru.basvuranAdSoyad),
-                  subtitle: Text('${basvuru.meslekUzmanlik} • ${basvuru.tecrubeYili} yıl tecrübe'),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _durumRengi(basvuru.durum).withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      basvuru.durum,
-                      style: TextStyle(color: _durumRengi(basvuru.durum), fontWeight: FontWeight.w600),
-                    ),
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  color: Colors.blue.shade50,
+                  child: const Text(
+                    'Adaylar yapay zeka uygunluk puanına göre sıralanmıştır. Bu sadece bir öneridir, son karar size aittir.',
+                    style: TextStyle(fontSize: 12),
                   ),
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => BasvuruDetayScreen(basvuru: basvuru)),
-                    );
-                    _listeyiYenile();
-                  },
-                );
-              },
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: basvurular.length,
+                    itemBuilder: (context, index) {
+                      final basvuru = basvurular[index];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: _puanRengi(basvuru.uygunlukPuani),
+                          child: Text(
+                            basvuru.uygunlukPuani != null ? '${basvuru.uygunlukPuani}' : '?',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ),
+                        title: Text(basvuru.basvuranAdSoyad),
+                        subtitle: Text('${basvuru.meslekUzmanlik} • ${basvuru.tecrubeYili} yıl tecrübe'),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _durumRengi(basvuru.durum).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            basvuru.durum,
+                            style: TextStyle(color: _durumRengi(basvuru.durum), fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => BasvuruDetayScreen(basvuru: basvuru)),
+                          );
+                          _listeyiYenile();
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           );
         },
