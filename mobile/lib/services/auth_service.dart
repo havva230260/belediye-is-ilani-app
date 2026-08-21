@@ -16,6 +16,7 @@ class AuthService {
       final veri = jsonDecode(utf8.decode(response.bodyBytes));
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', veri['token']);
+      await prefs.setInt('kullaniciId', veri['id']);
       await prefs.setString('adSoyad', veri['adSoyad']);
       await prefs.setString('rol', veri['rol']);
       return null;

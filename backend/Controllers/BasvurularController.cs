@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Backend.Data;
 using Backend.Models;
+using Backend.Models.Dtos;
 
 namespace Backend.Controllers;
 
@@ -10,27 +11,24 @@ namespace Backend.Controllers;
 public class BasvurularController : ControllerBase
 {
     private readonly AppDbContext _context;
+    public BasvurularController(AppDbContext context) { _context = context; }
 
-    public BasvurularController(AppDbContext context)
-    {
-        _context = context;
-    }
-
-    // GET: api/basvurular
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Basvuru>>> GetBasvurular()
-    {
-        return await _context.Basvurular.ToListAsync();
-    }
+    public async Task<ActionResult<IEnumerable<Basvuru>>> GetBasvurular() =>
+        await _context.Basvurular.ToListAsync();
 
-    // GET: api/basvurular/ilan/5 -> belirli bir ilana gelen tüm başvurular (işveren paneli için)
     [HttpGet("ilan/{ilanId}")]
-    public async Task<ActionResult<IEnumerable<Basvuru>>> GetBasvurularByIlan(int ilanId)
+    public async Task<ActionResult<IEnumerable<Basvuru>>> GetBasvurularByIlan(int ilanId) =>
+        await _context.Basvurular.Where(b => b.IlanId == ilanId).ToListAsync();
+
+    [HttpGet("kontrol")]
+    public async Task<ActionResult<bool>> BasvuruKontrol([FromQuery] int ilanId, [FromQuery] int isArayanId)
     {
-        return await _context.Basvurular.Where(b => b.IlanId == ilanId).ToListAsync();
+        var basvurmusMu = await _context.Basvurular
+            .AnyAsync(b => b.IlanId == ilanId && b.IsArayanId == isArayanId);
+        return basvurmusMu;
     }
 
-    // GET: api/basvurular/5
     [HttpGet("{id}")]
     public async Task<ActionResult<Basvuru>> GetBasvuru(int id)
     {
@@ -39,16 +37,50 @@ public class BasvurularController : ControllerBase
         return basvuru;
     }
 
-    // POST: api/basvurular
     [HttpPost]
-    public async Task<ActionResult<Basvuru>> CreateBasvuru(Basvuru basvuru)
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<Basvuru>> CreateBasvuru([FromForm] BasvuruFormDto dto)
     {
+        var zatenBasvurmus = await _context.Basvurular
+            .AnyAsync(b => b.IlanId == dto.IlanId && b.IsArayanId == dto.IsArayanId);
+        if (zatenBasvurmus)
+            return Conflict("Bu ilana zaten başvurdunuz.");
+
+        string cvDosyaYolu = string.Empty;
+        if (dto.CvDosyasi != null && dto.CvDosyasi.Length > 0)
+        {
+            if (dto.CvDosyasi.ContentType != "application/pdf")
+                return BadRequest("Sadece PDF dosyaları kabul edilir.");
+            if (dto.CvDosyasi.Length > 5 * 1024 * 1024)
+                return BadRequest("Dosya boyutu 5MB'ı geçemez.");
+
+            var uploadsKlasoru = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "cv");
+            Directory.CreateDirectory(uploadsKlasoru);
+            var dosyaAdi = $"{Guid.NewGuid()}_{dto.CvDosyasi.FileName}";
+            var tamYol = Path.Combine(uploadsKlasoru, dosyaAdi);
+            using (var stream = new FileStream(tamYol, FileMode.Create))
+            {
+                await dto.CvDosyasi.CopyToAsync(stream);
+            }
+            cvDosyaYolu = $"/uploads/cv/{dosyaAdi}";
+        }
+        else
+        {
+            return BadRequest("CV dosyası zorunludur.");
+        }
+
+        var basvuru = new Basvuru
+        {
+            IlanId = dto.IlanId, IsArayanId = dto.IsArayanId, DogumTarihi = dto.DogumTarihi,
+            Telefon = dto.Telefon, EgitimDurumu = dto.EgitimDurumu, Universite = dto.Universite,
+            Bolum = dto.Bolum, MeslekUzmanlik = dto.MeslekUzmanlik, TecrubeYili = dto.TecrubeYili,
+            CvDosyaYolu = cvDosyaYolu
+        };
         _context.Basvurular.Add(basvuru);
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetBasvuru), new { id = basvuru.Id }, basvuru);
     }
 
-    // PUT: api/basvurular/5/durum -> işveren başvuru durumunu günceller
     [HttpPut("{id}/durum")]
     public async Task<IActionResult> UpdateDurum(int id, [FromBody] string yeniDurum)
     {
@@ -59,7 +91,6 @@ public class BasvurularController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: api/basvurular/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBasvuru(int id)
     {

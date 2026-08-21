@@ -52,7 +52,7 @@ public class AuthController : ControllerBase
             return Unauthorized("E-posta veya şifre hatalı.");
 
         var token = TokenOlustur(kullanici);
-        return Ok(new { token, adSoyad = kullanici.AdSoyad, rol = kullanici.Rol.ToString() });
+        return Ok(new { token, id = kullanici.Id, adSoyad = kullanici.AdSoyad, rol = kullanici.Rol.ToString() });
     }
 
     private string TokenOlustur(Kullanici kullanici)
